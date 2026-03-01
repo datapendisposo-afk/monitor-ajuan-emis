@@ -401,7 +401,7 @@ async function loadData() {
             pemohon: findColumn(headers, ["pemohon"]),
             jenis: findColumn(headers, ["jenis"]),
             status: findColumn(headers, ["status"]),
-            dokumen: findColumn(headers, ["dokumen", "file", "upload", "lampiran"])
+            dokumen: 17 // Kolom R
         };
 
         // Jika kolom status tidak ditemukan → cegah tabel kosong
@@ -416,7 +416,7 @@ async function loadData() {
             pemohon: (r[idx.pemohon] || "-").trim(),
             jenis: (r[idx.jenis] || "-").trim(),
             status: (r[idx.status] || "-").trim(),
-            dokumen: (idx.dokumen !== -1 ? (r[idx.dokumen] || "") : "").trim()
+            dokumen: (r[17] ? r[17] : "").trim()
         }));
 
         // 🔥 UPDATE HANYA JIKA ADA PERUBAHAN (ANTI FLICKER)
@@ -612,3 +612,4 @@ setInterval(loadData, 5000); // realtime 5 detik TANPA reload & TANPA data hilan
 </body>
 
 </html>
+
