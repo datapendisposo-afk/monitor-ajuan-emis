@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor Ajuan Emis GTK</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: #f4f8f3;
+    margin: 0;
+    padding: 20px;
+}
+
+/* HEADER */
+.header-container {
+    background: linear-gradient(90deg, #2e7d32, #8dc63f);
+    border-radius: 16px;
+    padding: 20px;
+    color: white;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.logo {
+    width: 70px;
+}
+
+.header-text h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.header-text h2 {
+    margin: 4px 0 0;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* COUNTERS */
+.counters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.counter-card {
+    background: white;
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.counter-card h3 {
+    margin: 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.number {
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+.total { border-top: 5px solid #2e7d32; }
+.proses { border-top: 5px solid #f1c40f; }
+.disetujui { border-top: 5px solid #2ecc71; }
+.ditolak { border-top: 5px solid #e74c3c; }
+
+/* CARD */
+.card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+/* CONTROLS */
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+input {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    flex: 1;
+}
+
+.filter-btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.all { background: #2e7d32; color: white; }
+.btn-proses { background: #f1c40f; }
+.btn-disetujui { background: #2ecc71; color: white; }
+.btn-ditolak { background: #e74c3c; color: white; }
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #8dc63f;
+    color: white;
+    padding: 12px;
+    text-align: left;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+}
+.proses-badge { background: #f1c40f; color: #222; }
+.disetujui-badge { background: #2ecc71; }
+.ditolak-badge { background: #e74c3c; }
+
+.download-btn {
+    background: #2e7d32;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header-container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Logo_Kementerian_Agama.svg/512px-Logo_Kementerian_Agama.svg.png" class="logo">
+    <div class="header-text">
+        <h1>Kementerian Agama Kabupaten Poso</h1>
+        <h2>Seksi Pendidikan Islam</h2>
+        <p>Dashboard Monitoring Ajuan EMIS GTK (Realtime)</p>
+    </div>
+</div>
+
+<!-- COUNTERS -->
+<div class="counters">
+    <div class="counter-card total">
+        <h3>Total Ajuan</h3>
+        <div class="number" id="totalCount">0</div>
+    </div>
+    <div class="counter-card proses">
+        <h3>Proses</h3>
+        <div class="number" id="prosesCount">0</div>
+    </div>
+    <div class="counter-card disetujui">
+        <h3>Disetujui</h3>
+        <div class="number" id="disetujuiCount">0</div>
+    </div>
+    <div class="counter-card ditolak">
+        <h3>Ditolak</h3>
+        <div class="number" id="ditolakCount">0</div>
+    </div>
+</div>
+
+<!-- CHART -->
+<div class="card">
+    <h3>📊 Statistik Status Ajuan</h3>
+    <canvas id="chartStatus"></canvas>
+</div>
+
+<!-- TABLE -->
+<div class="card">
+    <div class="controls">
+        <input type="text" id="search" placeholder="🔍 Cari madrasah / pemohon...">
+        <button class="filter-btn all" onclick="filterStatus('all')">Semua</button>
+        <button class="filter-btn btn-proses" onclick="filterStatus('Proses')">Proses</button>
+        <button class="filter-btn btn-disetujui" onclick="filterStatus('Disetujui')">Disetujui</button>
+        <button class="filter-btn btn-ditolak" onclick="filterStatus('Ditolak')">Ditolak</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Jenjang</th>
+                <th>Nama Madrasah</th>
+                <th>Nama Pemohon</th>
+                <th>Jenis Ajuan</th>
+                <th>Status Ajuan</th>
+                <th>Unduh Dokumen</th>
+            </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+    </table>
+</div>
+
+<script>
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTqI-lmQOgyR8kFbuE0QCe0j3_t1jPVd6qHs7VpFHmjvd5NXiz6fCLzJGAJJaDbGSDHGDt7A8tzKBMr/pub?gid=216307091&single=true&output=csv";
+
+let rawData = [];
+let chart;
+
+// Parse CSV dengan aman (support koma & link)
+function parseCSV(text) {
+    const rows = text.split("\n").map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+    return rows;
+}
+
+async function loadData() {
+    const res = await fetch(sheetURL + "&t=" + new Date().getTime());
+    const text = await res.text();
+    const rows = parseCSV(text.trim());
+
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+
+    // Ambil index kolom sesuai nama asli sheet
+    const idx = {
+        jenjang: headers.indexOf("Jenjang"),
+        madrasah: headers.indexOf("Nama Madrasah"),
+        pemohon: headers.indexOf("Nama Pemohon"),
+        jenis: headers.indexOf("Jenis Ajuan"),
+        status: headers.indexOf("Status Ajuan"),
+        dokumen: headers.indexOf("Unduh Dokumen"),
+    };
+
+    rawData = dataRows.map(r => ({
+        jenjang: r[idx.jenjang] || "-",
+        madrasah: r[idx.madrasah] || "-",
+        pemohon: r[idx.pemohon] || "-",
+        jenis: r[idx.jenis] || "-",
+        status: r[idx.status] || "-",
+        dokumen: r[idx.dokumen] || ""
+    }));
+
+    updateCounters(rawData);
+    renderTable(rawData);
+    renderChart(rawData);
+}
+
+function updateCounters(data) {
+    const total = data.length;
+    const proses = data.filter(d => d.status === "Proses").length;
+    const disetujui = data.filter(d => d.status === "Disetujui").length;
+    const ditolak = data.filter(d => d.status === "Ditolak").length;
+
+    document.getElementById("totalCount").textContent = total;
+    document.getElementById("prosesCount").textContent = proses;
+    document.getElementById("disetujuiCount").textContent = disetujui;
+    document.getElementById("ditolakCount").textContent = ditolak;
+}
+
+function statusBadge(status) {
+    if (status === "Proses") return `<span class="status-badge proses-badge">Proses</span>`;
+    if (status === "Disetujui") return `<span class="status-badge disetujui-badge">Disetujui</span>`;
+    if (status === "Ditolak") return `<span class="status-badge ditolak-badge">Ditolak</span>`;
+    return status;
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById("table-body");
+    tbody.innerHTML = "";
+
+    data.forEach(d => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${d.jenjang}</td>
+            <td>${d.madrasah}</td>
+            <td>${d.pemohon}</td>
+            <td>${d.jenis}</td>
+            <td>${statusBadge(d.status)}</td>
+            <td>${d.dokumen ? `<a href="${d.dokumen}" target="_blank" class="download-btn">Unduh</a>` : "-"}</td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+function filterStatus(status) {
+    if (status === "all") {
+        renderTable(rawData);
+        return;
+    }
+    const filtered = rawData.filter(d => d.status === status);
+    renderTable(filtered);
+}
+
+function renderChart(data) {
+    const proses = data.filter(d => d.status === "Proses").length;
+    const disetujui = data.filter(d => d.status === "Disetujui").length;
+    const ditolak = data.filter(d => d.status === "Ditolak").length;
+
+    const ctx = document.getElementById('chartStatus');
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Proses', 'Disetujui', 'Ditolak'],
+            datasets: [{
+                data: [proses, disetujui, ditolak],
+                backgroundColor: ['#f1c40f', '#2ecc71', '#e74c3c']
+            }]
+        },
+        options: {
+            plugins: { legend: { position: 'bottom' } },
+            responsive: true
+        }
+    });
+}
+
+document.getElementById("search").addEventListener("keyup", function () {
+    const keyword = this.value.toLowerCase();
+    const filtered = rawData.filter(d =>
+        d.madrasah.toLowerCase().includes(keyword) ||
+        d.pemohon.toLowerCase().includes(keyword) ||
+        d.jenis.toLowerCase().includes(keyword)
+    );
+    renderTable(filtered);
+});
+
+loadData();
+setInterval(loadData, 15000); // auto refresh 15 detik
+</script>
+
+</body>
+</html>
