@@ -191,6 +191,55 @@ td {
     background: #ffd54f;
     transform: translateY(-2px);
 }
+/* FOOTER RESMI INSTANSI */
+.footer {
+    background: linear-gradient(90deg, #1b5e20, #2e7d32);
+    color: #ffffff;
+    padding: 20px;
+    margin-top: 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 14px;
+}
+
+.footer-left {
+    line-height: 1.6;
+}
+
+.footer-center {
+    text-align: center;
+    font-weight: 500;
+}
+
+.footer-center small {
+    opacity: 0.85;
+}
+
+.footer-right {
+    text-align: right;
+    line-height: 1.6;
+    font-size: 13px;
+}
+
+/* Responsive Mobile */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .footer-right {
+        text-align: center;
+    }
+}
 </style>
 </head>
 
@@ -399,6 +448,35 @@ loadData();
 setInterval(loadData, 15000); // auto refresh 15 detik
 </script>
 
+    <!-- FOOTER RESMI -->
+<footer class="footer">
+    <div class="footer-content">
+        
+        <div class="footer-left">
+            <strong>Kementerian Agama Kabupaten Poso</strong><br>
+            Seksi Pendidikan Islam<br>
+            📍 Alamat: Jl. P. Kalimantan
+        </div>
+
+        <div class="footer-center">
+            Sistem Monitoring Ajuan EMIS GTK
+            <br>
+            <small>Website Monitoring Laporan Ajuan EMIS GTK</small>
+        </div>
+
+        <div class="footer-right">
+            Dikembangkan oleh<br>
+            <strong>Seksi Pendis @ Edi Hermanto, S.Pd</strong><br>
+            © <span id="year"></span> All Rights Reserved
+        </div>
+
+    </div>
+</footer>
+
+<script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+</script>
 </body>
 
 </html>
+
