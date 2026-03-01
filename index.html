@@ -324,12 +324,9 @@ td {
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTqI-lmQOgyR8kFbuE0QCe0j3_t1jPVd6qHs7VpFHmjvd5NXiz6fCLzJGAJJaDbGSDHGDt7A8tzKBMr/pub?gid=216307091&single=true&output=csv";
 
 let rawData = [];
-let chart = null;
 let isFetching = false;
 
-/* =========================
-   CSV PARSER (ANTI KOMA & LINK)
-========================= */
+/* CSV PARSER STABIL */
 function parseCSV(text) {
     const rows = text.split(/\r?\n/);
     return rows.map(row =>
@@ -339,145 +336,85 @@ function parseCSV(text) {
     );
 }
 
-/* =========================
-   FIND COLUMN (ANTI BEDA NAMA HEADER)
-========================= */
-function findColumn(headers, keywords) {
-    return headers.findIndex(h =>
-        keywords.some(k => h.toLowerCase().includes(k))
-    );
-}
-
-/* =========================
-   LOADING HALUS (TIDAK HAPUS DATA)
-========================= */
-function showLoadingIndicator(show) {
-    let el = document.getElementById("loadingIndicator");
-
-    if (!el) {
-        el = document.createElement("div");
-        el.id = "loadingIndicator";
-        el.style.fontSize = "12px";
-        el.style.color = "#666";
-        el.style.marginBottom = "10px";
-        el.style.textAlign = "right";
-        document.querySelector(".card").prepend(el);
-    }
-
-    el.textContent = show 
-        ? "🔄 Memperbarui data..." 
-        : "🟢 Data realtime aktif";
-}
-
-/* =========================
-   LOAD DATA (TANPA FLICKER & TANPA HAPUS TABEL)
-========================= */
+/* LOAD DATA TANPA MENGHAPUS TABEL (ANTI HILANG) */
 async function loadData() {
-    if (isFetching) return; // cegah double fetch
+    if (isFetching) return;
     isFetching = true;
 
     try {
-        showLoadingIndicator(true);
+        document.getElementById("lastUpdate").textContent = "🔄 Memperbarui data...";
 
-        const response = await fetch(sheetURL + "&t=" + Date.now(), {
-            cache: "no-store"
-        });
+        const res = await fetch(sheetURL + "&t=" + Date.now(), { cache: "no-store" });
+        const text = await res.text();
+        const rows = parseCSV(text);
 
-        if (!response.ok) throw new Error("Fetch gagal");
-
-        const csvText = await response.text();
-        if (!csvText || csvText.length < 5) return;
-
-        const rows = parseCSV(csvText);
         if (rows.length <= 1) return;
 
-        const headers = rows[0].map(h => h.trim());
+        const headers = rows[0].map(h => h.toLowerCase());
         const dataRows = rows.slice(1).filter(r => r.length > 1);
 
-        // Mapping fleksibel (penting untuk Google Form)
+        // 🔥 DOKUMEN = KOLOM TERAKHIR (FINAL FIX)
+        const lastCol = headers.length - 1;
+
         const idx = {
-            jenjang: findColumn(headers, ["jenjang"]),
-            madrasah: findColumn(headers, ["madrasah"]),
-            pemohon: findColumn(headers, ["pemohon"]),
-            jenis: findColumn(headers, ["jenis"]),
-            status: findColumn(headers, ["status"]),
-            dokumen: findColumn(headers, ["dokumen", "file", "upload", "lampiran"])
+            jenjang: headers.findIndex(h => h.includes("jenjang")),
+            madrasah: headers.findIndex(h => h.includes("madrasah")),
+            pemohon: headers.findIndex(h => h.includes("pemohon")),
+            jenis: headers.findIndex(h => h.includes("jenis")),
+            status: headers.findIndex(h => h.includes("status")),
+            dokumen: lastCol
         };
 
-        // Jika kolom status tidak ditemukan → cegah tabel kosong
-        if (idx.status === -1) {
-            console.error("Kolom STATUS tidak ditemukan di spreadsheet");
-            return;
-        }
-
         const newData = dataRows.map(r => ({
-            jenjang: (r[idx.jenjang] || "-").trim(),
-            madrasah: (r[idx.madrasah] || "-").trim(),
-            pemohon: (r[idx.pemohon] || "-").trim(),
-            jenis: (r[idx.jenis] || "-").trim(),
+            jenjang: r[idx.jenjang] || "-",
+            madrasah: r[idx.madrasah] || "-",
+            pemohon: r[idx.pemohon] || "-",
+            jenis: r[idx.jenis] || "-",
             status: (r[idx.status] || "-").trim(),
-            dokumen: (idx.dokumen !== -1 ? (r[idx.dokumen] || "") : "").trim()
+            dokumen: (r[idx.dokumen] || "").trim()
         }));
 
-        // 🔥 UPDATE HANYA JIKA ADA PERUBAHAN (ANTI FLICKER)
+        // Update hanya jika data berubah (ANTI FLICKER)
         if (JSON.stringify(newData) !== JSON.stringify(rawData)) {
             rawData = newData;
             updateCounters(rawData);
             renderTable(rawData);
-            renderChart(rawData);
-            updateLastUpdate();
-            console.log("✅ Data diperbarui:", new Date().toLocaleTimeString());
         }
 
-    } catch (error) {
-        console.error("ERROR LOAD DATA:", error);
+        document.getElementById("lastUpdate").textContent =
+            "🕒 Update terakhir: " + new Date().toLocaleTimeString() + " (Auto 5 detik)";
+
+    } catch (e) {
+        console.error(e);
     } finally {
-        showLoadingIndicator(false);
         isFetching = false;
     }
 }
 
-/* =========================
-   COUNTERS (ANTI SPASI STATUS)
-========================= */
+/* COUNTER */
 function updateCounters(data) {
-    const normalize = s => s.toLowerCase().trim();
-
-    const total = data.length;
-    const proses = data.filter(d => normalize(d.status) === "proses").length;
-    const disetujui = data.filter(d => normalize(d.status) === "disetujui").length;
-    const ditolak = data.filter(d => normalize(d.status) === "ditolak").length;
-
-    document.getElementById("totalCount").textContent = total;
-    document.getElementById("prosesCount").textContent = proses;
-    document.getElementById("disetujuiCount").textContent = disetujui;
-    document.getElementById("ditolakCount").textContent = ditolak;
+    const norm = s => s.toLowerCase();
+    document.getElementById("totalCount").textContent = data.length;
+    document.getElementById("prosesCount").textContent = data.filter(d => norm(d.status) === "proses").length;
+    document.getElementById("disetujuiCount").textContent = data.filter(d => norm(d.status) === "disetujui").length;
+    document.getElementById("ditolakCount").textContent = data.filter(d => norm(d.status) === "ditolak").length;
 }
 
-/* =========================
-   BADGE STATUS
-========================= */
+/* BADGE */
 function statusBadge(status) {
-    const s = status.toLowerCase().trim();
+    const s = status.toLowerCase();
     if (s === "proses") return `<span class="status-badge proses-badge">Proses</span>`;
     if (s === "disetujui") return `<span class="status-badge disetujui-badge">Disetujui</span>`;
     if (s === "ditolak") return `<span class="status-badge ditolak-badge">Ditolak</span>`;
-    return `<span class="status-badge">${status}</span>`;
+    return status;
 }
 
-/* =========================
-   RENDER TABLE (HALUS TANPA KOSONG)
-========================= */
+/* RENDER TABLE TANPA KOSONG SAAT REFRESH */
 function renderTable(data) {
     const tbody = document.getElementById("table-body");
 
-    if (!data || data.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" style="text-align:center;padding:20px;">
-                    Belum ada data ajuan
-                </td>
-            </tr>`;
+    if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;">Belum ada data ajuan</td></tr>`;
         return;
     }
 
@@ -488,97 +425,32 @@ function renderTable(data) {
             <td>${d.pemohon}</td>
             <td>${d.jenis}</td>
             <td>${statusBadge(d.status)}</td>
-            <td>${d.dokumen ? `<a href="${d.dokumen}" target="_blank" class="download-btn">Unduh</a>` : "-"}</td>
+            <td>${d.dokumen && d.dokumen.startsWith("http")
+                ? `<a href="${d.dokumen}" target="_blank" class="download-btn">Unduh</a>`
+                : "-"}</td>
         </tr>
     `).join("");
 }
 
-/* =========================
-   FILTER STATUS
-========================= */
+/* FILTER */
 function filterStatus(status) {
-    if (status === "all") {
-        renderTable(rawData);
-        return;
-    }
-    const filtered = rawData.filter(d =>
-        d.status.toLowerCase().trim() === status.toLowerCase()
-    );
-    renderTable(filtered);
+    if (status === "all") return renderTable(rawData);
+    renderTable(rawData.filter(d => d.status.toLowerCase() === status.toLowerCase()));
 }
 
-/* =========================
-   CHART (TIDAK RELOAD BERAT)
-========================= */
-function renderChart(data) {
-    const count = (s) => data.filter(d => d.status.toLowerCase().trim() === s).length;
-
-    const proses = count("proses");
-    const disetujui = count("disetujui");
-    const ditolak = count("ditolak");
-
-    const ctx = document.getElementById("statusChart").getContext("2d");
-
-    if (chart) {
-        chart.data.datasets[0].data = [proses, disetujui, ditolak];
-        chart.update();
-        return;
-    }
-
-    chart = new Chart(ctx, {
-        type: "doughnut",
-        data: {
-            labels: ["Proses", "Disetujui", "Ditolak"],
-            datasets: [{
-                data: [proses, disetujui, ditolak],
-                backgroundColor: ["#f1c40f", "#2ecc71", "#e74c3c"]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            plugins: {
-                legend: { position: "bottom" }
-            }
-        }
-    });
-}
-
-/* =========================
-   SEARCH REALTIME
-========================= */
+/* SEARCH */
 document.getElementById("search").addEventListener("input", function () {
-    const keyword = this.value.toLowerCase();
-    const filtered = rawData.filter(d =>
-        d.madrasah.toLowerCase().includes(keyword) ||
-        d.pemohon.toLowerCase().includes(keyword) ||
-        d.jenis.toLowerCase().includes(keyword)
-    );
-    renderTable(filtered);
+    const k = this.value.toLowerCase();
+    renderTable(rawData.filter(d =>
+        d.madrasah.toLowerCase().includes(k) ||
+        d.pemohon.toLowerCase().includes(k) ||
+        d.jenis.toLowerCase().includes(k)
+    ));
 });
 
-/* =========================
-   LAST UPDATE TIME
-========================= */
-function updateLastUpdate() {
-    let el = document.getElementById("lastUpdate");
-    if (!el) {
-        el = document.createElement("div");
-        el.id = "lastUpdate";
-        el.style.fontSize = "12px";
-        el.style.color = "#666";
-        el.style.marginBottom = "10px";
-        document.querySelector(".card").prepend(el);
-    }
-    el.textContent = "🕒 Update terakhir: " + new Date().toLocaleTimeString() + " (Auto refresh 5 detik)";
-}
-
-/* =========================
-   INIT + AUTO REFRESH SUPER HALUS
-========================= */
-loadData(); // load pertama
-setInterval(loadData, 5000); // realtime 5 detik TANPA reload & TANPA data hilang
+/* INIT + AUTO REFRESH SUPER HALUS (TANPA DATA HILANG) */
+loadData();
+setInterval(loadData, 5000);
 </script>
 
     <!-- FOOTER RESMI -->
@@ -612,8 +484,3 @@ setInterval(loadData, 5000); // realtime 5 detik TANPA reload & TANPA data hilan
 </body>
 
 </html>
-
-
-
-
-
