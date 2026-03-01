@@ -151,18 +151,70 @@ td {
     text-decoration: none;
     font-size: 12px;
 }
+.header-container {
+    background: linear-gradient(90deg, #2e7d32, #8dc63f);
+    border-radius: 16px;
+    padding: 20px;
+    color: white;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.logo {
+    width: 70px;
+    height: auto;
+    background: white;
+    padding: 6px;
+    border-radius: 12px;
+}
+
+.header-action {
+    margin-left: auto;
+}
+
+.ajuan-btn {
+    background: #f1c40f;
+    color: #1b5e20;
+    padding: 12px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: 0.3s;
+}
+
+.ajuan-btn:hover {
+    background: #ffd54f;
+    transform: translateY(-2px);
+}
 </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
+<!-- HEADER DENGAN LOGO + TOMBOL AJUAN -->
 <div class="header-container">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Logo_Kementerian_Agama.svg/512px-Logo_Kementerian_Agama.svg.png" class="logo">
+    <!-- Logo Kemenag (lebih stabil) -->
+    <img src="logo-kemenag.png" class="logo">
+
     <div class="header-text">
         <h1>Kementerian Agama Kabupaten Poso</h1>
         <h2>Seksi Pendidikan Islam</h2>
         <p>Dashboard Monitoring Ajuan EMIS GTK (Realtime)</p>
+    </div>
+
+    <!-- Tombol Buat Ajuan -->
+    <div class="header-action">
+        <a 
+            href="https://docs.google.com/forms/d/e/1FAIpQLSeobyAgXqT_5rNrnJudlgRsG0BcAIDRUy8FN72MlOs6uWFr3g/viewform?usp=header" 
+            target="_blank" 
+            class="ajuan-btn">
+            ➕ Buat Ajuan
+        </a>
     </div>
 </div>
 
@@ -348,4 +400,5 @@ setInterval(loadData, 15000); // auto refresh 15 detik
 </script>
 
 </body>
+
 </html>
