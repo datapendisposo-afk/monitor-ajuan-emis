@@ -541,10 +541,18 @@ function updateLastUpdate() {
 }
 
 /* =========================
-   INIT + AUTO REFRESH (PRODUCTION)
+   INIT + AUTO REFRESH (SMOOTH)
 ========================= */
-loadData();
-setInterval(loadData, 10000); // 10 detik (lebih stabil dari 5 detik)
+async function refreshData() {
+    await loadData();      // ambil data terbaru
+    updateLastUpdate();    // update jam terakhir
+}
+
+// Load pertama
+refreshData();
+
+// Auto update tiap 5 detik TANPA reload halaman
+setInterval(refreshData, 5000);
 </script>
 
     <!-- FOOTER RESMI -->
@@ -578,6 +586,7 @@ setInterval(loadData, 10000); // 10 detik (lebih stabil dari 5 detik)
 </body>
 
 </html>
+
 
 
 
