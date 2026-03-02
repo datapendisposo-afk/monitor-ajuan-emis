@@ -477,7 +477,7 @@ function renderTable(data) {
     if (!data || data.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align:center;padding:20px;">
+                <td colspan="7" style="text-align:center;padding:20px;">
                     Belum ada data ajuan
                 </td>
             </tr>`;
@@ -491,7 +491,12 @@ function renderTable(data) {
             <td>${d.pemohon}</td>
             <td>${d.jenis}</td>
             <td>${statusBadge(d.status)}</td>
-            <td>${d.dokumen ? `<a href="${d.dokumen}" target="_blank" class="download-btn">Unduh</a>` : "-"}</td>
+            <td>${d.keterangan && d.keterangan !== "-" ? d.keterangan : "-"}</td>
+            <td>
+                ${d.dokumen 
+                    ? `<a href="${d.dokumen}" target="_blank" class="download-btn">Unduh</a>` 
+                    : "-"}
+            </td>
         </tr>
     `).join("");
 }
@@ -615,5 +620,6 @@ setInterval(loadData, 5000); // realtime 5 detik TANPA reload & TANPA data hilan
 </body>
 
 </html>
+
 
 
