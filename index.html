@@ -303,6 +303,18 @@ td {
         <button class="filter-btn btn-proses" onclick="filterStatus('Proses')">Proses</button>
         <button class="filter-btn btn-disetujui" onclick="filterStatus('Disetujui')">Disetujui</button>
         <button class="filter-btn btn-ditolak" onclick="filterStatus('Ditolak')">Ditolak</button>
+
+        <select id="filterJenis">
+        <option value="all">Semua Jenis Ajuan</option>
+    </select>
+
+    <select id="rowsPerPage">
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="50">50</option>
+        <option value="all">All</option>
+    </select>
     </div>
 
     <table>
@@ -319,6 +331,7 @@ td {
         </thead>
         <tbody id="table-body"></tbody>
     </table>
+    <div id="pagination" style="margin-top:15px;text-align:center;"></div>
 </div>
 
 <script>
@@ -620,6 +633,7 @@ setInterval(loadData, 5000); // realtime 5 detik TANPA reload & TANPA data hilan
 </body>
 
 </html>
+
 
 
 
