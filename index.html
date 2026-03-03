@@ -303,20 +303,8 @@ td {
         <button class="filter-btn btn-proses" onclick="filterStatus('Proses')">Proses</button>
         <button class="filter-btn btn-disetujui" onclick="filterStatus('Disetujui')">Disetujui</button>
         <button class="filter-btn btn-ditolak" onclick="filterStatus('Ditolak')">Ditolak</button>
-
-        <select id="filterJenis">
-        <option value="all">Semua Jenis Ajuan</option>
-    </select>
-
-    <select id="rowsPerPage">
-        <option value="10">10</option>
-        <option value="20">20</option>
-        <option value="30">30</option>
-        <option value="50">50</option>
-        <option value="all">All</option>
-    </select>
     </div>
-    
+
     <table>
         <thead>
             <tr>
@@ -331,7 +319,6 @@ td {
         </thead>
         <tbody id="table-body"></tbody>
     </table>
-    <div id="pagination" style="margin-top:15px;text-align:center;"></div>
 </div>
 
 <script>
@@ -341,11 +328,6 @@ let rawData = [];
 let chart = null;
 let isFetching = false;
 
-    // === FILTER & PAGINATION SYSTEM (TAMBAHAN AMAN) ===
-let filteredData = [];
-let currentPage = 1;
-let rowsPerPage = 10;
-let currentStatus = "all";
 /* =========================
    CSV PARSER (ANTI KOMA & LINK)
 ========================= */
@@ -444,8 +426,7 @@ async function loadData() {
         if (JSON.stringify(newData) !== JSON.stringify(rawData)) {
             rawData = newData;
             updateCounters(rawData);
-            populateJenisFilter();
-            applyFilters();
+            renderTable(rawData);
             renderChart(rawData);
             updateLastUpdate();
             console.log("✅ Data diperbarui:", new Date().toLocaleTimeString());
@@ -493,8 +474,6 @@ function statusBadge(status) {
 function renderTable(data) {
     const tbody = document.getElementById("table-body");
 
-    filteredData = data;
-
     if (!data || data.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -502,19 +481,10 @@ function renderTable(data) {
                     Belum ada data ajuan
                 </td>
             </tr>`;
-        document.getElementById("pagination").innerHTML = "";
         return;
     }
 
-    let displayData = data;
-
-    if (rowsPerPage !== "all") {
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        displayData = data.slice(start, end);
-    }
-
-    tbody.innerHTML = displayData.map(d => `
+    tbody.innerHTML = data.map(d => `
         <tr>
             <td>${d.jenjang}</td>
             <td>${d.madrasah}</td>
@@ -529,17 +499,16 @@ function renderTable(data) {
             </td>
         </tr>
     `).join("");
-
-    renderPagination(data.length);
 }
 
 /* =========================
    FILTER STATUS
 ========================= */
 function filterStatus(status) {
-    currentStatus = status;
-    applyFilters();
-}
+    if (status === "all") {
+        renderTable(rawData);
+        return;
+    }
     const filtered = rawData.filter(d =>
         d.status.toLowerCase().trim() === status.toLowerCase()
     );
@@ -583,107 +552,20 @@ function renderChart(data) {
         }
     });
 }
-// ==========================
-// FILTER UTAMA (STATUS + JENIS + SEARCH)
-// ==========================
-function applyFilters() {
-    const keyword = document.getElementById("search").value.toLowerCase();
-    const jenisValue = document.getElementById("filterJenis").value;
 
-    let data = rawData;
-
-    if (currentStatus !== "all") {
-        data = data.filter(d =>
-            d.status.toLowerCase().trim() === currentStatus.toLowerCase()
-        );
-    }
-
-    if (jenisValue !== "all") {
-        data = data.filter(d => d.jenis === jenisValue);
-    }
-
-    if (keyword) {
-        data = data.filter(d =>
-            d.madrasah.toLowerCase().includes(keyword) ||
-            d.pemohon.toLowerCase().includes(keyword) ||
-            d.jenis.toLowerCase().includes(keyword)
-        );
-    }
-
-    currentPage = 1;
-    renderTable(data);
-}
-
-// ==========================
-// POPULATE JENIS DROPDOWN
-// ==========================
-function populateJenisFilter() {
-    const select = document.getElementById("filterJenis");
-    const uniqueJenis = [...new Set(rawData.map(d => d.jenis))];
-
-    select.innerHTML = `<option value="all">Semua Jenis Ajuan</option>`;
-
-    uniqueJenis.forEach(j => {
-        select.innerHTML += `<option value="${j}">${j}</option>`;
-    });
-}
-
-// ==========================
-// PAGINATION SYSTEM
-// ==========================
-function renderPagination(totalRows) {
-    const pagination = document.getElementById("pagination");
-
-    if (rowsPerPage === "all") {
-        pagination.innerHTML = "";
-        return;
-    }
-
-    const totalPages = Math.ceil(totalRows / rowsPerPage);
-    let buttons = "";
-
-    for (let i = 1; i <= totalPages; i++) {
-        buttons += `
-            <button onclick="goToPage(${i})"
-                style="
-                    margin:3px;
-                    padding:6px 10px;
-                    border-radius:6px;
-                    border:none;
-                    cursor:pointer;
-                    background:${i === currentPage ? '#2e7d32' : '#ddd'};
-                    color:${i === currentPage ? 'white' : '#333'};
-                ">
-                ${i}
-            </button>
-        `;
-    }
-
-    pagination.innerHTML = buttons;
-}
-
-function goToPage(page) {
-    currentPage = page;
-    renderTable(filteredData);
-}
-
-// ==========================
-// DROPDOWN EVENTS
-// ==========================
-document.getElementById("filterJenis").addEventListener("change", applyFilters);
-
-document.getElementById("rowsPerPage").addEventListener("change", function () {
-    rowsPerPage = this.value === "all" ? "all" : parseInt(this.value);
-    currentPage = 1;
-    renderTable(filteredData.length ? filteredData : rawData);
-});
-    
 /* =========================
    SEARCH REALTIME
 ========================= */
 document.getElementById("search").addEventListener("input", function () {
-    applyFilters();
+    const keyword = this.value.toLowerCase();
+    const filtered = rawData.filter(d =>
+        d.madrasah.toLowerCase().includes(keyword) ||
+        d.pemohon.toLowerCase().includes(keyword) ||
+        d.jenis.toLowerCase().includes(keyword)
+    );
+    renderTable(filtered);
 });
+
 /* =========================
    LAST UPDATE TIME
 ========================= */
@@ -738,9 +620,3 @@ setInterval(loadData, 5000); // realtime 5 detik TANPA reload & TANPA data hilan
 </body>
 
 </html>
-
-
-
-
-
-
